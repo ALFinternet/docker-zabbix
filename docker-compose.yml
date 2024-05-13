@@ -87,6 +87,24 @@ services:
       - ${LOCVOL1}zabbix/agent:/data
     restart: unless-stopped
 #
+# docker run --name some-zabbix-snmptraps -p 162:1162/udp -d zabbix/zabbix-snmptraps:tag
+  zabbix-snmptraps:
+    image: zabbix/zabbix-snmptraps:alpine-latest
+    container_name: zabbix-snmptraps
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - ${LOCVOL1}zabbix/snmptraps:/var/lib/zabbix/
+    ports:
+      - 162:1162/udp
+    restart: unless-stopped
+    depends_on:
+      - db
+      - zabbix-server
+#
 #
 networks:
   default:
