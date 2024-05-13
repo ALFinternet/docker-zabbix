@@ -18,9 +18,6 @@ services:
       - ZBX_DEBUGLEVEL=3 #optional, default 3
     volumes:
       - ${LOCVOL1}zabbix/server:/data
-    ports:
-      - 3000:3000
-      - 2222:22
     restart: unless-stopped
     depends_on:
       - db
@@ -81,9 +78,6 @@ services:
       - ZBX_SERVER_HOST=${ZBX_SERVER_HOST}
     volumes:
       - ${LOCVOL1}zabbix/agent:/data
-    ports:
-      - 3000:3000
-      - 2222:22
     restart: unless-stopped
 #
 #
