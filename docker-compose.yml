@@ -1,0 +1,93 @@
+---
+version: "2.1"
+services:
+#
+# docker run --name some-zabbix-server-mysql -e DB_SERVER_HOST="some-mysql-server" -e MYSQL_USER="some-user" -e MYSQL_PASSWORD="some-password" --init -d zabbix/zabbix-server-mysql:tag
+  zabbix-server:
+    image: zabbix/zabbix-server-mysql:alpine-latest
+    container_name: zabbix-server
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - DB_SERVER_HOST=zabbix-db
+      - MYSQL_DATABASE=${DB_MYSQL_NAME} #optional, default zabbix
+      - MYSQL_USER=${DB_MYSQL_USER}
+      - MYSQL_PASSWORD=${DB_MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_MYSQL_PASSWORD}
+      - ZBX_DEBUGLEVEL=3 #optional, default 3
+    volumes:
+      - ${LOCVOL1}zabbix/server:/data
+    ports:
+      - 3000:3000
+      - 2222:22
+    restart: unless-stopped
+    depends_on:
+      - db
+#
+# docker run --name some-zabbix-web-nginx-mysql -e DB_SERVER_HOST="some-mysql-server" -e MYSQL_USER="some-user" -e MYSQL_PASSWORD="some-password" -e ZBX_SERVER_HOST="some-zabbix-server" -e PHP_TZ="some-timezone" -d zabbix/zabbix-web-nginx-mysql:tag
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-mysql:alpine-latest
+    container_name: zabbix-web
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - DB_SERVER_HOST=zabbix-db
+      - MYSQL_DATABASE=${DB_MYSQL_NAME} #optional, default zabbix
+      - MYSQL_USER=${DB_MYSQL_USER}
+      - MYSQL_PASSWORD=${DB_MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_MYSQL_PASSWORD}
+      - ZBX_SERVER_HOST=zabbix-server
+      - ZBX_DEBUGLEVEL=3 #optional, default 3
+      - PHP_TZ=${TZ}
+    volumes:
+      - ${LOCVOL1}zabbix/web:/data
+    restart: unless-stopped
+    depends_on:
+      - db
+      - zabbix-server
+#
+  db:
+    image: lscr.io/linuxserver/mariadb:latest
+    container_name: zabbix-db
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - MYSQL_ROOT_PASSWORD=${DB_MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${DB_MYSQL_NAME} #optional
+      - MYSQL_USER=${DB_MYSQL_USER} #optional
+      - MYSQL_PASSWORD=${DB_MYSQL_PASSWORD} #optional
+    volumes:
+      - ${LOCVOL1}zabbix/db:/config
+    #ports:
+      #- 3306:3306
+    restart: unless-stopped
+#
+# docker run --name some-zabbix-agent -e ZBX_HOSTNAME="some-hostname" -e ZBX_SERVER_HOST="some-zabbix-server" --init -d zabbix/zabbix-agent:tag
+  zabbix-agent:
+    image: zabbix/zabbix-agent:alpine-latest
+    container_name: zabbix-agent
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    privileged: true
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - ZBX_HOSTNAME-${ZBX_HOSTNAME}
+      - ZBX_SERVER_HOST=${ZBX_SERVER_HOST}
+    volumes:
+      - ${LOCVOL1}zabbix/agent:/data
+    ports:
+      - 3000:3000
+      - 2222:22
+    restart: unless-stopped
+#
+#
+networks:
+  default:
+    name: ${CONNET}
+    external: true
